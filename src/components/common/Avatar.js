@@ -1,0 +1,96 @@
+import React from 'react';
+import { View, StyleSheet, Text } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import { useSelector } from 'react-redux';
+import { selectThemeMode } from '@redux/slices/themeSlice';
+import { lightTheme, darkTheme } from '@theme';
+import { getInitials } from '@utils/helpers';
+
+export const Avatar = ({
+  uri,
+  name,
+  size = 50,
+  style,
+  showOnline = false,
+  isOnline = false,
+}) => {
+  const themeMode = useSelector(selectThemeMode);
+  const theme = themeMode === 'dark' ? darkTheme : lightTheme;
+
+  const containerSize = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+  };
+
+  return (
+    <View style={[styles.container, containerSize, style]}>
+      {uri ? (
+        <FastImage
+          source={{
+            uri,
+            priority: FastImage.priority.normal,
+            cache: FastImage.cacheControl.immutable,
+          }}
+          style={[styles.image, containerSize]}
+          resizeMode={FastImage.resizeMode.cover}
+        />
+      ) : (
+        <View
+          style={[
+            styles.placeholder,
+            containerSize,
+            { backgroundColor: theme.colors.primary },
+          ]}>
+          <Text
+            style={[
+              styles.initials,
+              { fontSize: size * 0.35, color: '#FFFFFF' },
+            ]}>
+            {getInitials(name)}
+          </Text>
+        </View>
+      )}
+      {showOnline && (
+        <View
+          style={[
+            styles.onlineIndicator,
+            {
+              backgroundColor: isOnline
+                ? theme.colors.onlineIndicator
+                : theme.colors.offlineIndicator,
+              borderColor: theme.colors.background,
+              width: size * 0.28,
+              height: size * 0.28,
+              borderRadius: (size * 0.28) / 2,
+            },
+          ]}
+        />
+      )}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
+  image: {
+    backgroundColor: '#E0E0E0',
+  },
+  placeholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initials: {
+    fontWeight: '600',
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    borderWidth: 2,
+  },
+});
+
+export default Avatar;
