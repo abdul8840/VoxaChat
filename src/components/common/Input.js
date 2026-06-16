@@ -29,11 +29,16 @@ export const Input = ({
         mode="outlined"
         error={!!error}
         secureTextEntry={secureTextEntry && !isPasswordVisible}
-        left={icon ? <TextInput.Icon icon={icon} /> : null}
+        left={
+          icon ? (
+            <TextInput.Icon icon={icon} color={theme.colors.primary} />
+          ) : null
+        }
         right={
           secureTextEntry ? (
             <TextInput.Icon
               icon={isPasswordVisible ? 'eye-off' : 'eye'}
+              color={theme.colors.subtext}
               onPress={() => setPasswordVisible(!isPasswordVisible)}
             />
           ) : null
@@ -45,11 +50,12 @@ export const Input = ({
             text: theme.colors.text,
             placeholder: theme.colors.subtext,
             onSurfaceVariant: theme.colors.subtext,
+            outline: theme.colors.border,
           },
         }}
         style={[
           styles.input,
-          { backgroundColor: theme.colors.background },
+          { backgroundColor: theme.colors.elevatedSurface },
         ]}
         {...props}
       />
@@ -68,5 +74,6 @@ const styles = StyleSheet.create({
   },
   input: {
     fontSize: 16,
+    borderRadius: 8,
   },
 });

@@ -6,6 +6,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Text,
+  TouchableOpacity,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUser } from '@redux/slices/authSlice';
@@ -90,13 +91,26 @@ const HomeScreen = ({ navigation }) => {
 
   const EmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="message-text-outline" size={80} color={theme.colors.border} />
+      <View
+        style={[
+          styles.emptyIcon,
+          { backgroundColor: theme.colors.primaryContainer },
+        ]}>
+        <Icon name="message-text-outline" size={46} color={theme.colors.primary} />
+      </View>
       <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
         No conversations yet
       </Text>
       <Text style={[styles.emptySubtitle, { color: theme.colors.subtext }]}>
         Search for users to start chatting
       </Text>
+      <TouchableOpacity
+        style={[styles.emptyAction, { backgroundColor: theme.colors.primary }]}
+        onPress={() => navigation.navigate(SCREEN_NAMES.SEARCH)}
+        activeOpacity={0.85}>
+        <Icon name="account-search-outline" size={18} color="#fff" />
+        <Text style={styles.emptyActionText}>Find people</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -129,7 +143,10 @@ const HomeScreen = ({ navigation }) => {
         }
         ItemSeparatorComponent={() => null}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={chats.length === 0 && styles.emptyList}
+        contentContainerStyle={[
+          styles.listContent,
+          chats.length === 0 && styles.emptyList,
+        ]}
       />
     </View>
   );
@@ -143,12 +160,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyList: { flex: 1 },
+  listContent: {
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 60,
     gap: 12,
+  },
+  emptyIcon: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyTitle: {
     fontSize: 20,
@@ -158,6 +186,20 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     textAlign: 'center',
+  },
+  emptyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    height: 42,
+    borderRadius: 21,
+    marginTop: 4,
+  },
+  emptyActionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
 

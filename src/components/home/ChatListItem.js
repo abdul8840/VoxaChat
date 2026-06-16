@@ -19,11 +19,12 @@ const ChatListItem = memo(({ chat, otherUser, currentUserId, onPress }) => {
   const unreadCount = chat?.unreadCount?.[currentUserId] || 0;
   const lastMessage = chat?.lastMessage;
   const isMyLastMessage = lastMessage?.senderId === currentUserId;
+  const hasUnread = unreadCount > 0;
 
   const getLastMessageText = () => {
     if (!lastMessage) return 'Start a conversation';
     if (lastMessage.type === MESSAGE_TYPES.IMAGE) {
-      return `${isMyLastMessage ? 'You: ' : ''}📷 Photo`;
+      return `${isMyLastMessage ? 'You: ' : ''}Photo`;
     }
     return `${isMyLastMessage ? 'You: ' : ''}${truncateText(lastMessage.text)}`;
   };
@@ -32,10 +33,13 @@ const ChatListItem = memo(({ chat, otherUser, currentUserId, onPress }) => {
     <TouchableOpacity
       style={[
         styles.container,
-        { borderBottomColor: theme.colors.border },
+        {
+          backgroundColor: theme.colors.elevatedSurface,
+          borderColor: theme.colors.border,
+        },
       ]}
       onPress={onPress}
-      activeOpacity={0.7}>
+      activeOpacity={0.75}>
       <Avatar
         uri={otherUser?.photoURL}
         name={otherUser?.displayName}
@@ -54,30 +58,34 @@ const ChatListItem = memo(({ chat, otherUser, currentUserId, onPress }) => {
             style={[
               styles.time,
               {
-                color: unreadCount > 0
-                  ? theme.colors.primary
-                  : theme.colors.timestamp,
-                fontWeight: unreadCount > 0 ? '600' : '400',
+                color: hasUnread ? theme.colors.primary : theme.colors.timestamp,
+                fontWeight: hasUnread ? '700' : '500',
               },
             ]}>
             {formatChatListTime(lastMessage?.timestamp)}
           </Text>
         </View>
         <View style={styles.bottomRow}>
+          {lastMessage?.type === MESSAGE_TYPES.IMAGE ? (
+            <Icon
+              name="image-outline"
+              size={16}
+              color={hasUnread ? theme.colors.primary : theme.colors.subtext}
+              style={styles.messageTypeIcon}
+            />
+          ) : null}
           <Text
             style={[
               styles.lastMessage,
               {
-                color: unreadCount > 0
-                  ? theme.colors.text
-                  : theme.colors.subtext,
-                fontWeight: unreadCount > 0 ? '500' : '400',
+                color: hasUnread ? theme.colors.text : theme.colors.subtext,
+                fontWeight: hasUnread ? '600' : '400',
               },
             ]}
             numberOfLines={1}>
             {getLastMessageText()}
           </Text>
-          {unreadCount > 0 && (
+          {hasUnread && (
             <View
               style={[
                 styles.badge,
@@ -98,9 +106,17 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginHorizontal: 14,
+    marginVertical: 5,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   content: {
     flex: 1,
@@ -110,11 +126,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 5,
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     flex: 1,
     marginRight: 8,
   },
@@ -131,10 +147,13 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
+  messageTypeIcon: {
+    marginRight: 4,
+  },
   badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 6,
@@ -142,7 +161,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });
 

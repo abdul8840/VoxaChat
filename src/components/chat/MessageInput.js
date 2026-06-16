@@ -52,17 +52,23 @@ const MessageInput = ({
       ]}>
       {/* Attachment button */}
       <TouchableOpacity
-        style={styles.iconButton}
+        style={[
+          styles.iconButton,
+          { backgroundColor: theme.colors.surfaceVariant },
+        ]}
         onPress={onSendImage}
         disabled={isSending}>
-        <Icon name="paperclip" size={24} color={theme.colors.subtext} />
+        <Icon name="paperclip" size={22} color={theme.colors.primary} />
       </TouchableOpacity>
 
       {/* Text Input */}
       <View
         style={[
           styles.inputContainer,
-          { backgroundColor: theme.colors.inputBackground },
+          {
+            backgroundColor: theme.colors.inputBackground,
+            borderColor: theme.colors.border,
+          },
         ]}>
         <TextInput
           ref={inputRef}
@@ -88,7 +94,11 @@ const MessageInput = ({
       {/* Send / Mic button */}
       {canSend ? (
         <TouchableOpacity
-          style={[styles.sendButton, { backgroundColor: theme.colors.primary }]}
+          style={[
+            styles.sendButton,
+            styles.sendButtonActive,
+            { backgroundColor: theme.colors.primary },
+          ]}
           onPress={handleSend}
           disabled={!canSend}>
           {isSending ? (
@@ -99,8 +109,11 @@ const MessageInput = ({
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
-          style={[styles.sendButton, { backgroundColor: theme.colors.primary }]}>
-          <Icon name="microphone" size={20} color="#fff" />
+          style={[
+            styles.sendButton,
+            { backgroundColor: theme.colors.surfaceVariant },
+          ]}>
+          <Icon name="microphone" size={20} color={theme.colors.primary} />
         </TouchableOpacity>
       )}
     </View>
@@ -111,19 +124,24 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   iconButton: {
-    padding: 8,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 2,
   },
   inputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    borderRadius: 24,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
     paddingVertical: Platform.OS === 'ios' ? 8 : 4,
     marginHorizontal: 4,
@@ -148,6 +166,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
+  },
+  sendButtonActive: {
+    shadowColor: '#0F766E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });
 

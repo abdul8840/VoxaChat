@@ -78,7 +78,10 @@ const SearchScreen = ({ navigation }) => {
     <TouchableOpacity
       style={[
         styles.userItem,
-        { borderBottomColor: theme.colors.border },
+        {
+          backgroundColor: theme.colors.elevatedSurface,
+          borderColor: theme.colors.border,
+        },
       ]}
       onPress={() => handleUserPress(item)}
       activeOpacity={0.7}>
@@ -104,7 +107,13 @@ const SearchScreen = ({ navigation }) => {
           </Text>
         ) : null}
       </View>
-      <Icon name="message-outline" size={20} color={theme.colors.primary} />
+      <View
+        style={[
+          styles.messageButton,
+          { backgroundColor: theme.colors.primaryContainer },
+        ]}>
+        <Icon name="message-outline" size={20} color={theme.colors.primary} />
+      </View>
     </TouchableOpacity>
   );
 
@@ -119,7 +128,10 @@ const SearchScreen = ({ navigation }) => {
           autoFocus
           style={[
             styles.searchInput,
-            { backgroundColor: theme.colors.inputBackground },
+            {
+              backgroundColor: theme.colors.inputBackground,
+              borderColor: theme.colors.border,
+            },
           ]}
           iconColor={theme.colors.primary}
           inputStyle={{ color: theme.colors.text }}
@@ -176,13 +188,18 @@ const styles = StyleSheet.create({
   searchInput: {
     elevation: 0,
     shadowOpacity: 0,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginHorizontal: 12,
+    marginVertical: 5,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
   userInfo: {
@@ -198,6 +215,13 @@ const styles = StyleSheet.create({
   },
   userBio: {
     fontSize: 13,
+  },
+  messageButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   centered: {
     flex: 1,

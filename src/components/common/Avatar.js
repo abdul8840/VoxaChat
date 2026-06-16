@@ -27,7 +27,11 @@ export const Avatar = ({
       {uri ? (
         <Image
           source={{ uri }}
-          style={[styles.image, containerSize]}
+          style={[
+            styles.image,
+            containerSize,
+            { borderColor: theme.colors.border },
+          ]}
           resizeMode="cover"
         />
       ) : (
@@ -35,12 +39,15 @@ export const Avatar = ({
           style={[
             styles.placeholder,
             containerSize,
-            { backgroundColor: theme.colors.primary },
+            {
+              backgroundColor: theme.colors.primaryContainer,
+              borderColor: theme.colors.border,
+            },
           ]}>
           <Text
             style={[
               styles.initials,
-              { fontSize: size * 0.35, color: '#FFFFFF' },
+              { fontSize: size * 0.35, color: theme.colors.primary },
             ]}>
             {getInitials(name)}
           </Text>
@@ -72,10 +79,12 @@ const styles = StyleSheet.create({
   },
   image: {
     backgroundColor: '#E0E0E0',
+    borderWidth: 1,
   },
   placeholder: {
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   initials: {
     fontWeight: '600',
