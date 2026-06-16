@@ -34,11 +34,16 @@ class MessagingService {
   }
 
   async updateTokenInFirestore(uid) {
-    const token = await this.getFCMToken();
-    if (token && uid) {
-      await firestoreService.updateFCMToken(uid, token);
+    try {
+      const token = await this.getFCMToken();
+      if (token && uid) {
+        await firestoreService.updateFCMToken(uid, token);
+      }
+      return token;
+    } catch (error) {
+      console.warn('Failed to update FCM token:', error);
+      return null;
     }
-    return token;
   }
 
   setupMessageHandlers(dispatch) {
@@ -72,7 +77,6 @@ class MessagingService {
 
     // Token refresh handler
     const unsubscribeTokenRefresh = messaging().onTokenRefresh(token => {
-      // Update token in Firestore when it refreshes
       console.log('FCM token refreshed:', token);
     });
 

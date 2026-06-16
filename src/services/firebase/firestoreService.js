@@ -78,8 +78,34 @@ const getFirestoreCursor = value => {
   return value;
 };
 
+const documentExists = doc => {
+  if (!doc) {
+    return false;
+  }
+
+  return typeof doc.exists === 'function' ? doc.exists() : !!doc.exists;
+};
+
 const logListenerError = (listenerName, error) => {
   console.warn(`${listenerName} listener failed:`, error);
+};
+
+const isNotFoundError = error =>
+  error?.code === 'firestore/not-found' ||
+  error?.message?.includes('[firestore/not-found]');
+
+const ignoreNotFound = async (operation, operationName) => {
+  try {
+    await operation;
+    return true;
+  } catch (error) {
+    if (isNotFoundError(error)) {
+      console.warn(`${operationName} skipped because the document was missing.`);
+      return false;
+    }
+
+    throw error;
+  }
 };
 
 class FirestoreService {
@@ -89,7 +115,7 @@ class FirestoreService {
     await firestore()
       .collection(COLLECTIONS.USERS)
       .doc(uid)
-      .set(userData);
+      .set(userData, { merge: true });
   }
 
   async getUserDocument(uid) {
@@ -98,7 +124,7 @@ class FirestoreService {
       .doc(uid)
       .get();
     
-    if (doc.exists) {
+    if (documentExists(doc)) {
       return getDocumentData(doc);
     }
     return null;
@@ -108,27 +134,37 @@ class FirestoreService {
     await firestore()
       .collection(COLLECTIONS.USERS)
       .doc(uid)
-      .update({
+      .set({
+        uid,
         ...data,
         updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
+      }, { merge: true });
   }
 
   async updateUserPresence(uid, isOnline) {
+    if (!uid) {
+      return;
+    }
+
     await firestore()
       .collection(COLLECTIONS.USERS)
       .doc(uid)
-      .update({
+      .set({
+        uid,
         isOnline,
         lastSeen: firestore.FieldValue.serverTimestamp(),
-      });
+      }, { merge: true });
   }
 
   async updateFCMToken(uid, token) {
+    if (!uid) {
+      return;
+    }
+
     await firestore()
       .collection(COLLECTIONS.USERS)
       .doc(uid)
-      .update({ fcmToken: token });
+      .set({ uid, fcmToken: token }, { merge: true });
   }
 
   // Search users by display name
@@ -151,7 +187,7 @@ class FirestoreService {
       .collection(COLLECTIONS.USERS)
       .doc(uid)
       .onSnapshot(doc => {
-        if (doc?.exists) {
+        if (documentExists(doc)) {
           callback(getDocumentData(doc));
         }
       }, error => {
@@ -172,7 +208,7 @@ class FirestoreService {
     const chatRef = firestore().collection(COLLECTIONS.CHATS).doc(chatId);
     const chat = await chatRef.get();
 
-    if (!chat.exists) {
+    if (!documentExists(chat)) {
       await chatRef.set({
         id: chatId,
         participants: [currentUserId, otherUserId],
@@ -216,10 +252,16 @@ class FirestoreService {
   }
 
   async updateChatLastMessage(chatId, message, senderId, receiverId) {
+    if (!chatId || !senderId || !receiverId) {
+      return;
+    }
+
     await firestore()
       .collection(COLLECTIONS.CHATS)
       .doc(chatId)
-      .update({
+      .set({
+        id: chatId,
+        participants: [senderId, receiverId],
         lastMessage: {
           text: message.type === MESSAGE_TYPES.TEXT ? message.text : '📷 Image',
           type: message.type,
@@ -227,26 +269,42 @@ class FirestoreService {
           timestamp: firestore.FieldValue.serverTimestamp(),
         },
         updatedAt: firestore.FieldValue.serverTimestamp(),
-        [`unreadCount.${receiverId}`]: firestore.FieldValue.increment(1),
-      });
+        unreadCount: {
+          [receiverId]: firestore.FieldValue.increment(1),
+        },
+      }, { merge: true });
   }
 
   async resetUnreadCount(chatId, userId) {
-    await firestore()
-      .collection(COLLECTIONS.CHATS)
-      .doc(chatId)
-      .update({
-        [`unreadCount.${userId}`]: 0,
-      });
+    if (!chatId || !userId) {
+      return;
+    }
+
+    await ignoreNotFound(
+      firestore()
+        .collection(COLLECTIONS.CHATS)
+        .doc(chatId)
+        .update({
+          [`unreadCount.${userId}`]: 0,
+        }),
+      'Reset unread count'
+    );
   }
 
   async updateTypingStatus(chatId, userId, isTyping) {
-    await firestore()
-      .collection(COLLECTIONS.CHATS)
-      .doc(chatId)
-      .update({
-        [`typingUsers.${userId}`]: isTyping,
-      });
+    if (!chatId || !userId) {
+      return;
+    }
+
+    await ignoreNotFound(
+      firestore()
+        .collection(COLLECTIONS.CHATS)
+        .doc(chatId)
+        .update({
+          [`typingUsers.${userId}`]: isTyping,
+        }),
+      'Typing status update'
+    );
   }
 
   // Listen to typing status
@@ -255,9 +313,13 @@ class FirestoreService {
       .collection(COLLECTIONS.CHATS)
       .doc(chatId)
       .onSnapshot(doc => {
-        if (doc?.exists) {
-          callback(normalizeFirestoreValue(doc.data().typingUsers || {}));
+        if (!documentExists(doc)) {
+          callback({});
+          return;
         }
+
+        const data = doc.data?.() || {};
+        callback(normalizeFirestoreValue(data.typingUsers || {}));
       }, error => {
         logListenerError('Typing', error);
         onError?.(error);
@@ -321,15 +383,18 @@ class FirestoreService {
   }
 
   async markMessageAsRead(chatId, messageId, userId) {
-    await firestore()
-      .collection(COLLECTIONS.CHATS)
-      .doc(chatId)
-      .collection(COLLECTIONS.MESSAGES)
-      .doc(messageId)
-      .update({
-        readBy: firestore.FieldValue.arrayUnion(userId),
-        status: 'read',
-      });
+    await ignoreNotFound(
+      firestore()
+        .collection(COLLECTIONS.CHATS)
+        .doc(chatId)
+        .collection(COLLECTIONS.MESSAGES)
+        .doc(messageId)
+        .update({
+          readBy: firestore.FieldValue.arrayUnion(userId),
+          status: 'read',
+        }),
+      'Mark message as read'
+    );
   }
 
   async markAllMessagesAsRead(chatId, userId, otherUserId) {
@@ -355,16 +420,19 @@ class FirestoreService {
   }
 
   async deleteMessage(chatId, messageId) {
-    await firestore()
-      .collection(COLLECTIONS.CHATS)
-      .doc(chatId)
-      .collection(COLLECTIONS.MESSAGES)
-      .doc(messageId)
-      .update({
-        isDeleted: true,
-        text: 'This message was deleted',
-        imageURL: null,
-      });
+    await ignoreNotFound(
+      firestore()
+        .collection(COLLECTIONS.CHATS)
+        .doc(chatId)
+        .collection(COLLECTIONS.MESSAGES)
+        .doc(messageId)
+        .update({
+          isDeleted: true,
+          text: 'This message was deleted',
+          imageURL: null,
+        }),
+      'Delete message'
+    );
   }
 }
 

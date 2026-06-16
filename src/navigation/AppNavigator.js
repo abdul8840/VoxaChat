@@ -41,17 +41,23 @@ const AppNavigator = () => {
   useEffect(() => {
     // Setup FCM
     const setupNotifications = async () => {
-      if (user?.uid) {
-        await messagingService.requestPermission();
-        await messagingService.updateTokenInFirestore(user.uid);
-        const cleanup = messagingService.setupMessageHandlers(dispatch);
-        return cleanup;
+      try {
+        if (user?.uid) {
+          await messagingService.requestPermission();
+          await messagingService.updateTokenInFirestore(user.uid);
+          const cleanup = messagingService.setupMessageHandlers(dispatch);
+          return cleanup;
+        }
+      } catch (error) {
+        console.warn('Notification setup failed:', error);
       }
     };
 
     const cleanupPromise = setupNotifications();
     return () => {
-      cleanupPromise.then(cleanup => cleanup?.());
+      cleanupPromise
+        .then(cleanup => cleanup?.())
+        .catch(error => console.warn('Notification cleanup failed:', error));
     };
   }, [user?.uid, dispatch]);
 

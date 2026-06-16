@@ -29,7 +29,11 @@ export const useMessages = (chatId, currentUserId, otherUserId) => {
         
         // Mark messages as read
         if (otherUserId) {
-          firestoreService.resetUnreadCount(chatId, currentUserId);
+          firestoreService
+            .resetUnreadCount(chatId, currentUserId)
+            .catch(error =>
+              console.warn('Failed to reset unread count:', error)
+            );
         }
       },
       PAGINATION.MESSAGES_PER_PAGE,

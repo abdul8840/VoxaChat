@@ -5,28 +5,40 @@ import { TYPING_TIMEOUT } from '@utils/constants';
 export const useTyping = (chatId, currentUserId) => {
   const typingTimeoutRef = useRef(null);
 
+  const setTypingStatus = useCallback(async isTyping => {
+    if (!chatId || !currentUserId) {
+      return;
+    }
+
+    try {
+      await firestoreService.updateTypingStatus(chatId, currentUserId, isTyping);
+    } catch (error) {
+      console.warn('Failed to update typing status:', error);
+    }
+  }, [chatId, currentUserId]);
+
   const startTyping = useCallback(async () => {
-    await firestoreService.updateTypingStatus(chatId, currentUserId, true);
+    await setTypingStatus(true);
     
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(async () => {
-      await firestoreService.updateTypingStatus(chatId, currentUserId, false);
+      await setTypingStatus(false);
     }, TYPING_TIMEOUT);
-  }, [chatId, currentUserId]);
+  }, [setTypingStatus]);
 
   const stopTyping = useCallback(async () => {
     clearTimeout(typingTimeoutRef.current);
-    await firestoreService.updateTypingStatus(chatId, currentUserId, false);
-  }, [chatId, currentUserId]);
+    await setTypingStatus(false);
+  }, [setTypingStatus]);
 
   useEffect(() => {
     return () => {
       clearTimeout(typingTimeoutRef.current);
       if (chatId && currentUserId) {
-        firestoreService.updateTypingStatus(chatId, currentUserId, false);
+        setTypingStatus(false);
       }
     };
-  }, [chatId, currentUserId]);
+  }, [chatId, currentUserId, setTypingStatus]);
 
   return { startTyping, stopTyping };
 };

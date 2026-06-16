@@ -10,10 +10,16 @@ export const usePresence = uid => {
   useEffect(() => {
     if (!uid) return;
 
+    const updatePresence = isOnline => {
+      firestoreService
+        .updateUserPresence(uid, isOnline)
+        .catch(error => console.warn('Failed to update presence:', error));
+    };
+
     // Update presence on app state change
     const handleAppStateChange = nextAppState => {
       const isActive = nextAppState === 'active';
-      firestoreService.updateUserPresence(uid, isActive);
+      updatePresence(isActive);
     };
 
     const subscription = AppState.addEventListener(
@@ -22,12 +28,12 @@ export const usePresence = uid => {
     );
 
     // Set online when hook mounts
-    firestoreService.updateUserPresence(uid, true);
+    updatePresence(true);
 
     return () => {
       subscription.remove();
       // Set offline on unmount
-      firestoreService.updateUserPresence(uid, false);
+      updatePresence(false);
     };
   }, [uid]);
 };

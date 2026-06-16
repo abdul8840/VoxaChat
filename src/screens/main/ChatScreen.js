@@ -69,11 +69,15 @@ const ChatScreen = ({ route, navigation }) => {
   useEffect(() => {
     const initChat = async () => {
       if (!chatId && currentUser?.uid && otherUser?.uid) {
-        const newChatId = await firestoreService.createOrGetChat(
-          currentUser.uid,
-          otherUser.uid
-        );
-        setChatId(newChatId);
+        try {
+          const newChatId = await firestoreService.createOrGetChat(
+            currentUser.uid,
+            otherUser.uid
+          );
+          setChatId(newChatId);
+        } catch (error) {
+          console.warn('Failed to initialize chat:', error);
+        }
       }
     };
     initChat();
@@ -94,7 +98,9 @@ const ChatScreen = ({ route, navigation }) => {
   // Mark messages as read when screen focuses
   useEffect(() => {
     if (chatId && currentUser?.uid && otherUser?.uid) {
-      firestoreService.resetUnreadCount(chatId, currentUser.uid);
+      firestoreService
+        .resetUnreadCount(chatId, currentUser.uid)
+        .catch(error => console.warn('Failed to reset unread count:', error));
     }
   }, [chatId, currentUser?.uid, otherUser?.uid]);
 
@@ -228,7 +234,11 @@ const ChatScreen = ({ route, navigation }) => {
         text: 'Delete Message',
         style: 'destructive',
         onPress: async () => {
-          await firestoreService.deleteMessage(chatId, message.id);
+          try {
+            await firestoreService.deleteMessage(chatId, message.id);
+          } catch (error) {
+            Alert.alert('Error', 'Failed to delete message.');
+          }
         },
       },
       { text: 'Cancel', style: 'cancel' },

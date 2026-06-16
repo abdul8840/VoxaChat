@@ -59,15 +59,19 @@ const SearchScreen = ({ navigation }) => {
   };
 
   const handleUserPress = async (user) => {
-    const chatId = await firestoreService.createOrGetChat(
-      currentUser.uid,
-      user.uid
-    );
-    
-    navigation.replace(SCREEN_NAMES.CHAT, {
-      chat: { id: chatId, participants: [currentUser.uid, user.uid] },
-      otherUser: user,
-    });
+    try {
+      const chatId = await firestoreService.createOrGetChat(
+        currentUser.uid,
+        user.uid
+      );
+      
+      navigation.replace(SCREEN_NAMES.CHAT, {
+        chat: { id: chatId, participants: [currentUser.uid, user.uid] },
+        otherUser: user,
+      });
+    } catch (error) {
+      console.warn('Failed to open chat:', error);
+    }
   };
 
   const renderUser = ({ item }) => (
