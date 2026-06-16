@@ -46,7 +46,7 @@ export const useWatchUserPresence = userId => {
           lastSeen: userData.lastSeen,
         })
       );
-    });
+    }, () => {});
 
     return unsubscribe;
   }, [userId, dispatch]);

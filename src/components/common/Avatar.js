@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { View, StyleSheet, Text, Image } from 'react-native';
 import { useSelector } from 'react-redux';
 import { selectThemeMode } from '@redux/slices/themeSlice';
 import { lightTheme, darkTheme } from '@theme';
@@ -26,14 +25,10 @@ export const Avatar = ({
   return (
     <View style={[styles.container, containerSize, style]}>
       {uri ? (
-        <FastImage
-          source={{
-            uri,
-            priority: FastImage.priority.normal,
-            cache: FastImage.cacheControl.immutable,
-          }}
+        <Image
+          source={{ uri }}
           style={[styles.image, containerSize]}
-          resizeMode={FastImage.resizeMode.cover}
+          resizeMode="cover"
         />
       ) : (
         <View

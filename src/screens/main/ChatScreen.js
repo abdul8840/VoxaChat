@@ -85,7 +85,8 @@ const ChatScreen = ({ route, navigation }) => {
     
     const unsubscribe = firestoreService.onTypingChanged(
       chatId,
-      users => setTypingUsers(users)
+      users => setTypingUsers(users),
+      () => setTypingUsers({})
     );
     return unsubscribe;
   }, [chatId]);

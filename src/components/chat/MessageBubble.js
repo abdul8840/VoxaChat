@@ -1,6 +1,5 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import FastImage from 'react-native-fast-image';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSelector } from 'react-redux';
 import { selectThemeMode } from '@redux/slices/themeSlice';
@@ -72,10 +71,10 @@ const MessageBubble = memo(({
         {/* Image message */}
         {message.type === MESSAGE_TYPES.IMAGE && message.imageURL && (
           <TouchableOpacity onPress={() => onImagePress?.(message.imageURL)}>
-            <FastImage
+            <Image
               source={{ uri: message.imageURL }}
               style={styles.messageImage}
-              resizeMode={FastImage.resizeMode.cover}
+              resizeMode="cover"
             />
           </TouchableOpacity>
         )}

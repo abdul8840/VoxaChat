@@ -1,6 +1,87 @@
 import firestore from '@react-native-firebase/firestore';
 import { COLLECTIONS, MESSAGE_TYPES } from '@utils/constants';
 
+const getTimestampMillis = value => {
+  if (!value) {
+    return 0;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value.toMillis === 'function') {
+    return value.toMillis();
+  }
+
+  if (typeof value.seconds === 'number') {
+    return value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1000000);
+  }
+
+  if (typeof value._seconds === 'number') {
+    return value._seconds * 1000 + Math.floor((value._nanoseconds || 0) / 1000000);
+  }
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  return 0;
+};
+
+const isFirestoreTimestamp = value => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return (
+    typeof value.toMillis === 'function' ||
+    typeof value.toDate === 'function' ||
+    typeof value.seconds === 'number' ||
+    typeof value._seconds === 'number'
+  );
+};
+
+const normalizeFirestoreValue = value => {
+  if (isFirestoreTimestamp(value)) {
+    return getTimestampMillis(value);
+  }
+
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeFirestoreValue);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.entries(value).reduce((normalized, [key, nestedValue]) => {
+      normalized[key] = normalizeFirestoreValue(nestedValue);
+      return normalized;
+    }, {});
+  }
+
+  return value;
+};
+
+const getDocumentData = doc => ({
+  id: doc.id,
+  ...normalizeFirestoreValue(doc.data() || {}),
+});
+
+const getFirestoreCursor = value => {
+  if (typeof value === 'number') {
+    return new Date(value);
+  }
+
+  return value;
+};
+
+const logListenerError = (listenerName, error) => {
+  console.warn(`${listenerName} listener failed:`, error);
+};
+
 class FirestoreService {
   // ─── User Operations ───────────────────────────────────────────────
 
@@ -18,7 +99,7 @@ class FirestoreService {
       .get();
     
     if (doc.exists) {
-      return { id: doc.id, ...doc.data() };
+      return getDocumentData(doc);
     }
     return null;
   }
@@ -60,19 +141,22 @@ class FirestoreService {
       .get();
 
     return querySnapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .map(getDocumentData)
       .filter(user => user.uid !== currentUserId);
   }
 
   // Listen to user document changes
-  onUserChanged(uid, callback) {
+  onUserChanged(uid, callback, onError) {
     return firestore()
       .collection(COLLECTIONS.USERS)
       .doc(uid)
       .onSnapshot(doc => {
-        if (doc.exists) {
-          callback({ id: doc.id, ...doc.data() });
+        if (doc?.exists) {
+          callback(getDocumentData(doc));
         }
+      }, error => {
+        logListenerError('User', error);
+        onError?.(error);
       });
   }
 
@@ -107,17 +191,27 @@ class FirestoreService {
   }
 
   // Listen to user's chats
-  onChatsChanged(userId, callback) {
+  onChatsChanged(userId, callback, onError) {
     return firestore()
       .collection(COLLECTIONS.CHATS)
       .where('participants', 'array-contains', userId)
-      .orderBy('updatedAt', 'desc')
       .onSnapshot(snapshot => {
-        const chats = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        if (!snapshot?.docs) {
+          callback([]);
+          return;
+        }
+
+        const chats = snapshot.docs
+          .map(getDocumentData)
+          .sort(
+            (a, b) =>
+              getTimestampMillis(b.updatedAt) - getTimestampMillis(a.updatedAt)
+          );
+
         callback(chats);
+      }, error => {
+        logListenerError('Chats', error);
+        onError?.(error);
       });
   }
 
@@ -156,14 +250,17 @@ class FirestoreService {
   }
 
   // Listen to typing status
-  onTypingChanged(chatId, callback) {
+  onTypingChanged(chatId, callback, onError) {
     return firestore()
       .collection(COLLECTIONS.CHATS)
       .doc(chatId)
       .onSnapshot(doc => {
-        if (doc.exists) {
-          callback(doc.data().typingUsers || {});
+        if (doc?.exists) {
+          callback(normalizeFirestoreValue(doc.data().typingUsers || {}));
         }
+      }, error => {
+        logListenerError('Typing', error);
+        onError?.(error);
       });
   }
 
@@ -185,7 +282,7 @@ class FirestoreService {
   }
 
   // Optimized paginated message loading
-  onMessagesChanged(chatId, callback, limit = 30) {
+  onMessagesChanged(chatId, callback, limit = 30, onError) {
     return firestore()
       .collection(COLLECTIONS.CHATS)
       .doc(chatId)
@@ -193,10 +290,18 @@ class FirestoreService {
       .orderBy('timestamp', 'desc')
       .limit(limit)
       .onSnapshot(snapshot => {
+        if (!snapshot?.docs) {
+          callback([]);
+          return;
+        }
+
         const messages = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .map(getDocumentData)
           .reverse();
         callback(messages);
+      }, error => {
+        logListenerError('Messages', error);
+        onError?.(error);
       });
   }
 
@@ -206,12 +311,12 @@ class FirestoreService {
       .doc(chatId)
       .collection(COLLECTIONS.MESSAGES)
       .orderBy('timestamp', 'desc')
-      .startAfter(lastMessageTimestamp)
+      .startAfter(getFirestoreCursor(lastMessageTimestamp))
       .limit(limit)
       .get();
 
     return snapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .map(getDocumentData)
       .reverse();
   }
 

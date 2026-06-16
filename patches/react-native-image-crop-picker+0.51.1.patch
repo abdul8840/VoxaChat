@@ -1,0 +1,36 @@
+diff --git a/node_modules/react-native-image-crop-picker/android/src/main/java/com/reactnative/ivpusic/imagepicker/ImageCropPicker.java b/node_modules/react-native-image-crop-picker/android/src/main/java/com/reactnative/ivpusic/imagepicker/ImageCropPicker.java
+index b9c494e..ca1af87 100644
+--- a/node_modules/react-native-image-crop-picker/android/src/main/java/com/reactnative/ivpusic/imagepicker/ImageCropPicker.java
++++ b/node_modules/react-native-image-crop-picker/android/src/main/java/com/reactnative/ivpusic/imagepicker/ImageCropPicker.java
+@@ -697,10 +697,6 @@ class ImageCropPicker implements ActivityEventListener {
+     }
+ 
+     private void configureCropperColors(UCrop.Options options) {
+-        if (cropperActiveWidgetColor != null) {
+-            options.setActiveControlsWidgetColor(Color.parseColor(cropperActiveWidgetColor));
+-        }
+-
+         if (cropperToolbarColor != null) {
+             options.setToolbarColor(Color.parseColor(cropperToolbarColor));
+         }
+@@ -708,9 +704,6 @@ class ImageCropPicker implements ActivityEventListener {
+         if (cropperToolbarWidgetColor != null) {
+             options.setToolbarWidgetColor(Color.parseColor(cropperToolbarWidgetColor));
+         }
+-
+-        options.setStatusBarLight(cropperStatusBarLight);
+-        options.setNavigationBarLight(cropperNavigationBarLight);
+     }
+ 
+     private void startCropping(final Activity activity, final Uri uri) {
+@@ -933,8 +926,8 @@ class ImageCropPicker implements ActivityEventListener {
+         final int DEFAULT_VALUE = -1;
+         final WritableMap map = new WritableNativeMap();
+ 
+-        map.putInt("x", data.getIntExtra(UCrop.EXTRA_OUTPUT_OFFSET_X, DEFAULT_VALUE));
+-        map.putInt("y", data.getIntExtra(UCrop.EXTRA_OUTPUT_OFFSET_Y, DEFAULT_VALUE));
++        map.putInt("x", DEFAULT_VALUE);
++        map.putInt("y", DEFAULT_VALUE);
+         map.putInt("width", data.getIntExtra(UCrop.EXTRA_OUTPUT_IMAGE_WIDTH, DEFAULT_VALUE));
+         map.putInt("height", data.getIntExtra(UCrop.EXTRA_OUTPUT_IMAGE_HEIGHT, DEFAULT_VALUE));
+ 

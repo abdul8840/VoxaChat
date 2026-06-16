@@ -10,7 +10,12 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUser } from '@redux/slices/authSlice';
 import { selectThemeMode } from '@redux/slices/themeSlice';
-import { setChats, selectChats, selectChatsLoading } from '@redux/slices/chatsSlice';
+import {
+  setChats,
+  setChatsError,
+  selectChats,
+  selectChatsLoading,
+} from '@redux/slices/chatsSlice';
 import { firestoreService } from '@services/firebase/firestoreService';
 import { lightTheme, darkTheme } from '@theme';
 import ChatListItem from '@components/home/ChatListItem';
@@ -30,14 +35,18 @@ const HomeScreen = ({ navigation }) => {
 
   // Fetch other user data for each chat
   const fetchOtherUserData = useCallback(async (chat) => {
-    const otherUserId = chat.participants.find(id => id !== user.uid);
+    const otherUserId = chat.participants.find(id => id !== user?.uid);
     if (!otherUserId || usersCache[otherUserId]) return;
     
-    const userData = await firestoreService.getUserDocument(otherUserId);
-    if (userData) {
-      setUsersCache(prev => ({ ...prev, [otherUserId]: userData }));
+    try {
+      const userData = await firestoreService.getUserDocument(otherUserId);
+      if (userData) {
+        setUsersCache(prev => ({ ...prev, [otherUserId]: userData }));
+      }
+    } catch (error) {
+      console.warn('Failed to load chat user:', error);
     }
-  }, [user.uid, usersCache]);
+  }, [user?.uid, usersCache]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -48,6 +57,11 @@ const HomeScreen = ({ navigation }) => {
         dispatch(setChats(fetchedChats));
         // Fetch user data for each chat
         fetchedChats.forEach(fetchOtherUserData);
+      },
+      error => {
+        dispatch(
+          setChatsError(error?.message || 'Unable to load conversations.')
+        );
       }
     );
 
@@ -55,24 +69,24 @@ const HomeScreen = ({ navigation }) => {
   }, [user?.uid, dispatch, fetchOtherUserData]);
 
   const handleChatPress = useCallback((chat) => {
-    const otherUserId = chat.participants.find(id => id !== user.uid);
+    const otherUserId = chat.participants.find(id => id !== user?.uid);
     const otherUser = usersCache[otherUserId];
     navigation.navigate(SCREEN_NAMES.CHAT, { chat, otherUser });
-  }, [navigation, user.uid, usersCache]);
+  }, [navigation, user?.uid, usersCache]);
 
   const renderItem = useCallback(({ item: chat }) => {
-    const otherUserId = chat.participants.find(id => id !== user.uid);
+    const otherUserId = chat.participants.find(id => id !== user?.uid);
     const otherUser = usersCache[otherUserId];
     
     return (
       <ChatListItem
         chat={chat}
         otherUser={otherUser}
-        currentUserId={user.uid}
+        currentUserId={user?.uid}
         onPress={() => handleChatPress(chat)}
       />
     );
-  }, [user.uid, usersCache, handleChatPress]);
+  }, [user?.uid, usersCache, handleChatPress]);
 
   const EmptyComponent = () => (
     <View style={styles.emptyContainer}>

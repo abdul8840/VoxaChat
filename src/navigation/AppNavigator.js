@@ -1,5 +1,9 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme as NavigationDefaultTheme,
+  DarkTheme as NavigationDarkTheme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSelector, useDispatch } from 'react-redux';
 import { StatusBar } from 'react-native';
@@ -28,6 +32,8 @@ const AppNavigator = () => {
   const isInitialized = useSelector(selectIsInitialized);
   const themeMode = useSelector(selectThemeMode);
   const theme = themeMode === 'dark' ? darkTheme : lightTheme;
+  const navigationTheme =
+    themeMode === 'dark' ? NavigationDarkTheme : NavigationDefaultTheme;
 
   // Manage user presence
   usePresence(user?.uid);
@@ -57,7 +63,9 @@ const AppNavigator = () => {
     <NavigationContainer
       ref={navigationRef}
       theme={{
+        ...navigationTheme,
         colors: {
+          ...navigationTheme.colors,
           background: theme.colors.background,
           card: theme.colors.surface,
           text: theme.colors.text,

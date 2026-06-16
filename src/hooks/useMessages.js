@@ -32,7 +32,10 @@ export const useMessages = (chatId, currentUserId, otherUserId) => {
           firestoreService.resetUnreadCount(chatId, currentUserId);
         }
       },
-      PAGINATION.MESSAGES_PER_PAGE
+      PAGINATION.MESSAGES_PER_PAGE,
+      () => {
+        dispatch(setMessagesLoading({ chatId, loading: false }));
+      }
     );
 
     return unsubscribe;
@@ -51,21 +54,25 @@ export const useMessages = (chatId, currentUserId, otherUserId) => {
       return;
     }
 
-    const olderMessages = await firestoreService.loadMoreMessages(
-      chatId,
-      oldestMessage.timestamp,
-      PAGINATION.MESSAGES_PER_PAGE
-    );
+    try {
+      const olderMessages = await firestoreService.loadMoreMessages(
+        chatId,
+        oldestMessage.timestamp,
+        PAGINATION.MESSAGES_PER_PAGE
+      );
 
-    if (olderMessages.length < PAGINATION.MESSAGES_PER_PAGE) {
-      hasMoreRef.current = false;
-    }
+      if (olderMessages.length < PAGINATION.MESSAGES_PER_PAGE) {
+        hasMoreRef.current = false;
+      }
 
-    if (olderMessages.length > 0) {
-      dispatch(appendMessages({ chatId, messages: olderMessages }));
+      if (olderMessages.length > 0) {
+        dispatch(appendMessages({ chatId, messages: olderMessages }));
+      }
+    } catch (error) {
+      console.warn('Failed to load older messages:', error);
+    } finally {
+      isLoadingMoreRef.current = false;
     }
-    
-    isLoadingMoreRef.current = false;
   }, [chatId, messages, dispatch]);
 
   return { messages, isLoading, loadMoreMessages };
